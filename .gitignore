@@ -11,8 +11,9 @@ frontend/dist/
 node_modules/
 
 # Machine Learning Binaries
-*.pkl
-*.joblib
+# Note: model.pkl is tracked intentionally for cloud deployment
+# *.pkl
+# *.joblib
 
 # Local Data Storage
 data/raw/*

@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import joblib
 from sklearn.model_selection import train_test_split
@@ -8,20 +9,28 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import LinearRegression
 
-# 1. Use a hosted production fallback URL for remote server builds
-DATA_URL = "https://raw.githubusercontent.com/manan-bedi/House-Prices-Advanced-Regression-Techniques/master/data/train.csv"
+# ── Configuration ──
+MODEL_OUTPUT = "model.pkl"
 LOCAL_PATH = os.path.join("data", "raw", "train.csv")
 
+# ── Skip retraining if model already exists (critical for cloud deploys) ──
+if os.path.exists(MODEL_OUTPUT) and "--force" not in sys.argv:
+    print(f"✓ Pre-trained model found at '{MODEL_OUTPUT}'. Skipping retraining.")
+    print("  (Run with --force to retrain: python app/model.py --force)")
+    sys.exit(0)
+
+# ── Load Dataset ──
 print("Loading dataset for model compilation...")
-# If local dataset exists, use it; otherwise stream it via HTTPS
 if os.path.exists(LOCAL_PATH):
-    print("Using local train.csv file asset.")
+    print(f"Using local dataset: {LOCAL_PATH}")
     df = pd.read_csv(LOCAL_PATH)
 else:
-    print("Local file missing or on cloud server. Fetching train.csv via secure stream link...")
-    df = pd.read_csv(DATA_URL)
+    print("ERROR: Local training data not found at", LOCAL_PATH)
+    print("Please place the Kaggle 'train.csv' file in data/raw/ before training.")
+    print("Download from: https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data")
+    sys.exit(1)
 
-# 2. Feature Selection
+# ── Feature Selection ──
 numeric_features = ["GrLivArea", "BedroomAbvGr", "FullBath", "YearBuilt"]
 categorical_features = ["Neighborhood", "HouseStyle"]
 features = numeric_features + categorical_features
@@ -30,7 +39,7 @@ target = "SalePrice"
 X = df[features]
 y = df[target]
 
-# 3. Preprocessing Pipelines
+# ── Preprocessing Pipelines ──
 numeric_transformer = Pipeline(steps=[
     ("imputer", SimpleImputer(strategy="median")),
     ("scaler", StandardScaler())
@@ -48,7 +57,7 @@ preprocessor = ColumnTransformer(
     ]
 )
 
-# 4. Chain Pipeline
+# ── Train Pipeline ──
 model_pipeline = Pipeline(steps=[
     ("preprocessor", preprocessor),
     ("regressor", LinearRegression())
@@ -59,8 +68,8 @@ print("Training production-grade pipeline...")
 model_pipeline.fit(X_train, y_train)
 
 score = model_pipeline.score(X_test, y_test)
-print(f"Model trained successfully! R^2 Score: {score:.4f}")
+print(f"Model trained successfully! R² Score: {score:.4f}")
 
-# 5. Save the pipeline object out to the workspace root
-joblib.dump(model_pipeline, "model.pkl")
-print("Production pipeline saved successfully as 'model.pkl'!")
+# ── Save ──
+joblib.dump(model_pipeline, MODEL_OUTPUT)
+print(f"Production pipeline saved successfully as '{MODEL_OUTPUT}'!")
