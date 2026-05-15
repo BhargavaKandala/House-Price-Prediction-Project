@@ -40,7 +40,7 @@ const HOUSE_STYLES = [
   { value: "SLvl", label: "Split Level" },
 ];
 
-const API_URL = "http://127.0.0.1:8000/predict";
+const API_URL = "https://house-price-prediction-project-crcz.onrender.com/predict";
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("en-US", {
@@ -77,13 +77,19 @@ function App() {
     setPredictedPrice(null);
 
     try {
-      const response = await fetch("https://house-price-prediction-project-crcz.onrender.com/predict", {
+      const response = await fetch(API_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ... })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          GrLivArea: parseFloat(grLivArea),
+          BedroomAbvGr: parseInt(bedroomAbvGr),
+          FullBath: parseInt(fullBath),
+          YearBuilt: parseInt(yearBuilt),
+          Neighborhood: neighborhood,
+          HouseStyle: houseStyle,
+        }),
       });
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(
@@ -98,7 +104,7 @@ function App() {
     } catch (err) {
       if (err.name === "TypeError" && err.message === "Failed to fetch") {
         setError(
-          "Could not connect to the prediction API. Please ensure the FastAPI server is running on http://127.0.0.1:8000"
+          "Could not connect to the prediction API. The server may be waking up — please try again in a moment."
         );
       } else {
         setError(err.message || "An unexpected error occurred.");
