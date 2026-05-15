@@ -77,19 +77,13 @@ function App() {
     setPredictedPrice(null);
 
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch("https://house-price-prediction-project-crcz.onrender.com/predict", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          GrLivArea: parseFloat(grLivArea),
-          BedroomAbvGr: parseInt(bedroomAbvGr),
-          FullBath: parseInt(fullBath),
-          YearBuilt: parseInt(yearBuilt),
-          Neighborhood: neighborhood,
-          HouseStyle: houseStyle,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ... })
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(
