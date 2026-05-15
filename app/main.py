@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
 import pandas as pd
+import os
 
 app = FastAPI()
 
@@ -21,7 +22,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-model_pipeline = joblib.load("model.pkl")
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+model_path = os.path.join(BASE_DIR, "model.pkl")
+model_pipeline = joblib.load(model_path)
 
 # 2. Update the Pydantic schema to match the 6 Kaggle features
 class HouseInput(BaseModel):
