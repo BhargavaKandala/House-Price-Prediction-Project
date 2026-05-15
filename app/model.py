@@ -1,43 +1,56 @@
+import os
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import Ridge
-from sklearn.metrics import mean_absolute_error, r2_score
 import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LinearRegression
 
-# Load dataset
-df = pd.read_csv("train.csv")
+DATA_PATH = os.path.join("data", "raw", "train.csv")
 
-# Select simple features (keep it clean for API)
-features = ["GrLivArea", "BedroomAbvGr", "FullBath"]
+if not os.path.exists(DATA_PATH):
+    raise FileNotFoundError(f"Could not find train.csv at {DATA_PATH}. Please place it there.")
+
+df = pd.read_csv(DATA_PATH)
+
+numeric_features = ["GrLivArea", "BedroomAbvGr", "FullBath", "YearBuilt"]
+categorical_features = ["Neighborhood", "HouseStyle"]
+features = numeric_features + categorical_features
 target = "SalePrice"
-
-df = df[features + [target]].dropna()
 
 X = df[features]
 y = df[target]
 
-# Split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-
-# Pipeline (THIS is what makes it professional)
-pipeline = Pipeline([
-    ("scaler", StandardScaler()),
-    ("model", Ridge())
+numeric_transformer = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="median")), 
+    ("scaler", StandardScaler())                  
 ])
 
-# Train
-pipeline.fit(X_train, y_train)
+categorical_transformer = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="most_frequent")), 
+    ("onehot", OneHotEncoder(handle_unknown="ignore"))    
+])
 
-# Evaluate
-preds = pipeline.predict(X_test)
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", numeric_transformer, numeric_features),
+        ("cat", categorical_transformer, categorical_features)
+    ]
+)
 
-mae = mean_absolute_error(y_test, preds)
-r2 = r2_score(y_test, preds)
+model_pipeline = Pipeline(steps=[
+    ("preprocessor", preprocessor),
+    ("regressor", LinearRegression())
+])
 
-print(f"MAE: {mae}")
-print(f"R2 Score: {r2}")
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+print("Training production-grade pipeline on Kaggle data...")
+model_pipeline.fit(X_train, y_train)
 
-# Save model
-joblib.dump(pipeline, "model.pkl")
+score = model_pipeline.score(X_test, y_test)
+print(f"Model trained successfully! R^2 Validation Score: {score:.4f}")
+
+joblib.dump(model_pipeline, "model.pkl")
+print("Production pipeline saved successfully as 'model.pkl'!")
