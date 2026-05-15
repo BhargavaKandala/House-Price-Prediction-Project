@@ -1,0 +1,19 @@
+# Prerequisites
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# Build artifacts
+frontend/node_modules/
+frontend/dist/
+node_modules/
+
+# Machine Learning Binaries
+*.pkl
+*.joblib
+
+# Local Data Storage
+data/raw/*
+!data/raw/.gitkeep
